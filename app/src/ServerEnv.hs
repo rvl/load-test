@@ -30,7 +30,6 @@ import Control.Monad.Trans.Control
 import Control.Monad.Base
 import Control.Monad.Log
 import Control.Monad.Reader
-import Data.ByteString.Extra           as BS (readFileMaybe, writeFile, ByteString)
 import qualified Data.ByteString.Char8 as S8 (pack)
 import Data.ByteString.Lazy            (toStrict)
 import Data.Int                        (Int64)

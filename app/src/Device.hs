@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE  RecordWildCards #-}
 
 module Device
   ( DeviceId
@@ -10,7 +11,7 @@ module Device
 
 import Data.Aeson
 import Data.Text (Text)
-import Data.Time.Clock.POSIX (POSIXTime)
+import Data.Time.Clock (UTCTime)
 import GHC.Generics
 import Data.UUID
 
@@ -20,7 +21,7 @@ data Command = Stay | ChargeFromGrid | DischargeToGrid deriving (Show, Eq, Gener
 
 data Measurement = Measurement
                    { mDeviceId :: DeviceId
-                   , mTime :: POSIXTime
+                   , mTime :: UTCTime
                    , mCharge :: Int
                    , mMaxCharge :: Int
                    , mChargeRate :: Double
@@ -37,6 +38,20 @@ instance FromJSON Command
 instance ToJSON Command
 
 instance ToJSON Measurement where
-  toEncoding = genericToEncoding defaultOptions
+  toJSON Measurement{..} = object
+    [ "id" .= mDeviceId
+    , "time" .= mTime
+    , "charge" .= mCharge
+    , "max_charge" .= mMaxCharge
+    , "charge_rate" .= mChargeRate
+    , "temp" .= mTemp ]
 
-instance FromJSON Measurement
+instance FromJSON Measurement where
+  parseJSON = withObject "Measurement" $ \o ->
+    Measurement <$>
+    (o .:? "id".!= nil) <*>
+    (o .: "time") <*>
+    (o .: "charge") <*>
+    (o .: "max_charge") <*>
+    (o .: "charge_rate") <*>
+    (o .: "temp")
