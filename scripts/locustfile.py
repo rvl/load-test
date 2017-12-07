@@ -3,12 +3,16 @@ import random
 from datetime import datetime
 import json
 
+json_headers = {"Content-type": "application/json" }
+
 class WebsiteTasks(TaskSet):
-    # def on_start(self):
-    #     self.client.post("/login", {
-    #         "username": "test_user",
-    #         "password": ""
-    #     })
+    def on_start(self):
+        # rather convoluted login process but meh
+        auth = self.client.post("/login", json={
+            "username": "test_user",
+        }, headers=json_headers)
+        username = auth.json()["username"]
+        self.client.headers.update({"servant-auth-cookie": username})
     
     @task
     def command(self):
@@ -16,7 +20,7 @@ class WebsiteTasks(TaskSet):
         
     @task
     def stats(self):
-        self.client.post("/measurement", json.dumps(gen_data()), headers={"Content-type": "application/json"})
+        self.client.post("/measurement", json=gen_data(), headers=json_headers)
 
 class WebsiteUser(HttpLocust):
     task_set = WebsiteTasks

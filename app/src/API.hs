@@ -14,14 +14,16 @@ import Servant.Server.Experimental.Auth
 
 import qualified Database as DB
 import Device
+import Statistics
 
 type DeviceAPI =
-  "command" :> Get '[JSON] Command
+  "command" :> Get '[JSON] CommandAction
   :<|> "measurement" :> ReqBody '[JSON] Measurement :> Post '[JSON] NoContent
 
-type LoginAPI = "login" :> ReqBody '[JSON] LoginRequest :> Post '[JSON] LoginRequest
+type UnprotectedAPI = "login" :> ReqBody '[JSON] LoginRequest :> Post '[JSON] LoginRequest
+  :<|> "statistics" :> Get '[JSON] Statistics
 
-type API = LoginAPI :<|> AuthProtect "cookie-auth" :> DeviceAPI
+type API = UnprotectedAPI :<|> AuthProtect "cookie-auth" :> DeviceAPI
 
 -- | A value holding our type-level API
 genAPI :: Proxy API

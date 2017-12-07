@@ -104,7 +104,7 @@ in
     requires = [ "postgresql.service" "app-setup.service" ];
     after = [ "postgresql.service" "app-setup.service" ];
     script = ''
-      ${app}/bin/load-test-server --hostname 0.0.0.0 --port ${toString appPort} --database postgres:///load_test
+      ${app}/bin/load-test-server --hostname 0.0.0.0 --port ${toString appPort} --database postgres:///load_test +RTS -T
     '';
   };
 }

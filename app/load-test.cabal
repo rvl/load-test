@@ -9,7 +9,6 @@ maintainer:          dev@rodney.id.au
 copyright:           2017 Rodney Lorrimar
 category:            Web
 build-type:          Simple
-extra-source-files:  default.nix shell.nix
 cabal-version:       >=1.10
 
 library
@@ -22,7 +21,8 @@ library
                        Database
                        Device
                        Log
-                       -- Query
+                       Statistics
+                       Query
                        ServerEnv
                        Opaleye.Extra
   build-depends:       base                >= 4.7 && < 5
@@ -47,6 +47,8 @@ library
                      , postgresql-simple-migration
                      , product-profunctors
                      , profunctors
+                     , prometheus-client
+                     , prometheus-metrics-ghc
                      , resource-pool
                      , safe
                      , say
@@ -61,6 +63,7 @@ library
                      , vector
                      , wai
                      , wai-extra
+                     , wai-middleware-prometheus
                      , warp
                      , wl-pprint-text
   default-language:    Haskell2010

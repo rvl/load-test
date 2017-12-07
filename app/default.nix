@@ -4,6 +4,8 @@ with (import ./haskell-packages.nix) {inherit pkgs;};
 with haskellPackages; 
 with pkgs;
 
-haskellPackageGen {
+let filterHaskell = builtins.filterSource (path: type: ((builtins.match ".*\.(hs|cabal)$" path != null) || type == "directory") && baseNameOf (toString path) != "dist");
+
+in haskellPackageGen {
   extraEnvPackages = [ opaleye-gen postgresql ];
-} src
+} (filterHaskell src)

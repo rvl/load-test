@@ -19,7 +19,8 @@ import Data.Foldable                        (toList)
 import Data.List                            (sortOn)
 import Data.Maybe                           (catMaybes)
 import Data.Monoid                          ((<>))
-import Data.Text
+import Data.Text                            (Text)
+import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
 import Data.ByteString (ByteString)
 import Network.Wai
@@ -30,6 +31,11 @@ import Servant
 import Servant.Utils.Enter                  (enter)
 import Servant.Server.Experimental.Auth
 import qualified Data.UUID as UUID
+import Data.UUID.V4 (nextRandom)
+import GHC.Int (Int64)
+import qualified Network.Wai.Middleware.Prometheus as P
+import qualified Prometheus as P
+import qualified Prometheus.Metric.GHC as P
 
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text.IO       as T
@@ -37,9 +43,10 @@ import qualified Data.Text.IO       as T
 import API
 import Config
 import qualified Database as DB
--- import Query
+import Query
 import ServerEnv
 import Device
+import Statistics
 
 startApp :: Config -> IO ()
 startApp config = do
@@ -48,9 +55,10 @@ startApp config = do
   newEnv config >>= \case
     Nothing -> pure ()
     Just env -> do
+      _ <- P.register P.ghcMetrics
       T.putStrLn $ "Serving on http://" <> configHostname config
-                   <> ":" <> (pack . show $ port)
-      run port . logging =<< app env
+                   <> ":" <> (T.pack . show $ port)
+      run port . P.prometheus P.def . logging =<< app env
 
 loggingMiddleware :: Config -> Middleware
 loggingMiddleware config = case configAccessLogLevel config of
@@ -60,13 +68,12 @@ loggingMiddleware config = case configAccessLogLevel config of
 
 app :: Env -> IO Application
 app env = pure $ serveWithContext api (appContext env) (server env)
-  where  api = Proxy :: Proxy DeviceAPI
+  where  api = Proxy :: Proxy API
 
 lookupAccount :: ByteString -> Servant.Handler DeviceId
 lookupAccount i = case UUID.fromText (decodeUtf8 i) of
   Just uuid -> pure uuid
   Nothing -> throwError (err403 { errBody = "Invalid Cookie" })
-
 
 authHandler :: AuthHandler Request DeviceId
 authHandler =
@@ -88,15 +95,39 @@ appToHandler' env r = do
 appToHandler :: Env -> App :~> Servant.Handler
 appToHandler env = NT (appToHandler' env)
 
-server :: Env -> Server DeviceAPI
+server :: Env -> Server API
 server env = enter (appToHandler env) api
-  where api = handleCommand undefined :<|> handleMeasurement undefined
+  where
+    api = unprotected :<|> device
+    device uuid = command uuid :<|> measurement uuid
+    unprotected = login :<|> statistics
 
-handleCommand :: DeviceId -> App Command
-handleCommand d = return Stay
+    command :: DeviceId -> App CommandAction
+    command _ = return Stay
 
-handleMeasurement :: DeviceId -> Measurement -> App NoContent
-handleMeasurement d m@Measurement{..} = return NoContent
+    measurement :: DeviceId -> Measurement -> App NoContent
+    measurement deviceId m@Measurement{..} = do
+      liftIO $ P.incCounter measurementsCounter
+      withConnection $ \c -> do
+        insertDevice c deviceId
+        insertMeasurement c m { measurementDeviceId = deviceId }
+      return NoContent
 
-handleLogin :: LoginRequest -> App LoginRequest
-handleLogin r@LoginRequest{..} = return r
+    login :: LoginRequest -> App LoginRequest
+    login r@LoginRequest{..} = do
+      deviceId <- liftIO nextRandom
+      withConnection $ \c -> insertDevice c deviceId
+      return $ LoginRequest (UUID.toText deviceId)
+
+    statistics :: App Statistics
+    statistics = Statistics <$> countMeasurements
+
+countMeasurements :: App Int
+countMeasurements = longInt . head <$> runQueryWithConnection countMeasurementsQuery
+  where longInt = fromIntegral :: Int64 -> Int
+
+{-# NOINLINE measurementsCounter #-}
+measurementsCounter :: P.Metric P.Counter
+measurementsCounter = P.unsafeRegisterIO
+  $ P.counter
+  $ P.Info "app_measurements_total" "The number of measurements submitted to the app."
