@@ -1,0 +1,96 @@
+name:                load-test
+version:             0.1.0.0
+synopsis:            A server to test load on
+description:         Please see README.md
+homepage:            https://github.com/rvl/load-test
+license:             GPL-3
+author:              Rodney Lorrimar
+maintainer:          dev@rodney.id.au
+copyright:           2017 Rodney Lorrimar
+category:            Web
+build-type:          Simple
+extra-source-files:  default.nix shell.nix
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Lib
+                       API
+                       Config
+                       Control.Monad.Except.Extra
+                       Data.Aeson.Extra
+                       Database
+                       Device
+                       Log
+                       -- Query
+                       ServerEnv
+                       Opaleye.Extra
+  build-depends:       base                >= 4.7 && < 5
+                     , aeson
+                     , async
+                     , bytestring
+                     , containers
+                     , data-default
+                     , directory
+                     , file-embed
+                     , filepath
+                     , interpolatedstring-perl6
+                     , lens
+                     , lifted-base
+                     , logging-effect
+                     , monad-control
+                     , mtl
+                     , natural-transformation
+                     , network-uri
+                     , opaleye
+                     , postgresql-simple
+                     , postgresql-simple-migration
+                     , product-profunctors
+                     , profunctors
+                     , resource-pool
+                     , safe
+                     , say
+                     , scientific
+                     , servant-server
+                     , servant
+                     , text
+                     , time
+                     , transformers-base
+                     , uri-bytestring
+                     , uuid
+                     , vector
+                     , wai
+                     , wai-extra
+                     , warp
+                     , wl-pprint-text
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+
+executable load-test-server
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , load-test
+                     , bytestring
+                     , optparse-applicative
+                     , text
+  default-language:    Haskell2010
+
+executable fill-database
+  hs-source-dirs:      app
+  main-is:             fill-database.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , load-test
+                     , bytestring
+                     , data-default
+                     , optparse-applicative
+                     , postgresql-simple
+                     , say
+                     , text
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/rvl/load-test
