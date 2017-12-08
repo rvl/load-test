@@ -20,6 +20,10 @@ in {
     script = ''
       ${pkgs.python3Packages.locustio}/bin/locust -f ${locustFile} --host="http://app:8080" --port=${toString locustPort}
     '';
+
+    serviceConfig = {
+      LimitNOFILE = 40000;
+    };
   };
 
 }

@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE device(
-  id UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v1()
+  id UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4()
 );
 
 CREATE TABLE measurement(

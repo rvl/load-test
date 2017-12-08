@@ -1,8 +1,4 @@
 {
-  deployment.targetEnv = "virtualbox";
-  deployment.virtualbox.memorySize = 2048; # Mbytes
-  deployment.virtualbox.headless = true;
-
   i18n.defaultLocale = "en_US.UTF-8";
 
   services.nixosManual.showManual = false;
@@ -13,5 +9,10 @@
   users = {
     mutableUsers = false;
     users.root.openssh.authorizedKeys.keyFiles = [ ~/.ssh/id_rsa.pub ];
+  };
+
+  # allows locust to spawn lots of connections
+  boot.kernel.sysctl = {
+    "fs.file-max" = "100000";
   };
 }
