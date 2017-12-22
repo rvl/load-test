@@ -13,12 +13,12 @@ module Query
 import Control.Arrow              (returnA)
 import Data.ByteString
 import Data.Maybe (listToMaybe)
-import Data.Text
+import Data.Text (Text)
 import Database.PostgreSQL.Simple (Connection, withTransaction, SqlError)
 import Opaleye.Extra
 import Data.Time.Clock (getCurrentTime, UTCTime)
 import Control.Exception (catch)
-import Control.Monad (void)
+import Control.Monad (void, when)
 
 import Database
 import Device
@@ -32,12 +32,17 @@ commandForDeviceQuery uuid now = proc () -> do
   restrict -< isNull commandStatus
   returnA -< cmd
 
+deviceByIdQuery :: DeviceId -> Query DeviceReadColumns
+deviceByIdQuery uuid = proc () -> do
+  d <- queryTable deviceTable -< ()
+  restrict -< pgUUID uuid .== deviceId d
+  returnA -< d
+
 insertDevice :: Connection -> DeviceId -> IO ()
-insertDevice c d = catch (withTransaction c insert) ignore
-  where
-    insert = void $ runInsertMany c deviceTable [Device (Just (pgUUID d))]
-    ignore :: SqlError -> IO ()
-    ignore e = return ()
+insertDevice c d = withTransaction c $ do
+  ds <- runQuery c (deviceByIdQuery d) :: IO [Device]
+  when (Prelude.null ds) $ void $
+    runInsertMany c deviceTable [Device (Just (pgUUID d))]
 
 insertMeasurement :: Connection -> Measurement -> IO ()
 insertMeasurement c m = void $
