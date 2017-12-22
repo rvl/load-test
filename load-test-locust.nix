@@ -22,6 +22,7 @@ in {
     '';
 
     serviceConfig = {
+      # needs to make a lot of connections
       LimitNOFILE = 40000;
     };
   };

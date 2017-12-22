@@ -48,5 +48,10 @@ in
     script = ''
       ${app}/bin/load-test-server --hostname 0.0.0.0 --port ${toString appPort} --database postgres:///load_test +RTS -T
     '';
+
+    serviceConfig = {
+      # needs to handle a lot of connections
+      LimitNOFILE = 40000;
+    };
   };
 }
