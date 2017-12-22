@@ -11,10 +11,12 @@ CREATE TABLE device(
 CREATE TABLE measurement(
   device_id UUID NOT NULL REFERENCES device(id),
   time timestamptz NOT NULL,
-  charge INTEGER NOT NULL,
-  max_charge INTEGER NOT NULL,
+  charge_now INTEGER NOT NULL,
+  charge_full INTEGER NOT NULL,
   charge_rate DOUBLE PRECISION NOT NULL,
-  temp DOUBLE PRECISION NOT NULL
+  ambient_temp DOUBLE PRECISION NOT NULL,
+  water_temp DOUBLE PRECISION NOT NULL,
+  water_level INTEGER NOT NULL
 );
 
 SELECT create_hypertable('measurement', 'time');
@@ -22,6 +24,8 @@ SELECT create_hypertable('measurement', 'time');
 CREATE TABLE command(
   device_id UUID NOT NULL REFERENCES device(id),
   time timestamptz NOT NULL,
-  command TEXT NOT NULL,
+  charge BOOLEAN NOT NULL,
+  fill BOOLEAN NOT NULL,
+  flush DOUBLE PRECISION,
   status BOOLEAN
 );

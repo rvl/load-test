@@ -103,7 +103,7 @@ server env = enter (appToHandler env) api
     unprotected = login :<|> statistics
 
     command :: DeviceId -> App CommandAction
-    command _ = return Stay
+    command _ = return $ CommandAction NoChargeBattery NoFillReservoir NoFlushReservoir
 
     measurement :: DeviceId -> Measurement -> App NoContent
     measurement deviceId m@Measurement{..} = do

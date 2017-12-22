@@ -31,8 +31,10 @@ def gen_data():
     return {
         "id": "00000000-0000-0000-0000-000000000000",
         "time": datetime.now().isoformat() + "Z",
-        "charge": random.randint(0, 100),
-        "max_charge": random.randint(0, 100),
+        "charge_now": random.randint(0, 100),
+        "charge_full": random.randint(0, 100),
         "charge_rate": random.random() * 200.0 - 100.0,
-        "temp": random.random() * 40.0 + 20.0,
+        "ambient_temp": random.random() * 40.0 + 20.0,
+        "water_temp": random.random() * 40.0 + 20.0,
+        "water_level": random.randint(0, 100),
     }

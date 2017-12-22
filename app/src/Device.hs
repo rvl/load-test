@@ -6,11 +6,15 @@
 
 module Device
   ( DeviceId
-  , Command(..)
+  , Command'(..)
+  , Command
   , CommandAction(..)
   , Measurement'(..)
   , Measurement
   , LoginRequest(..)
+  , ChargeBattery(..)
+  , FillReservoir(..)
+  , FlushReservoir(..)
   ) where
 
 import Data.Aeson
@@ -23,7 +27,15 @@ import Database
 
 type DeviceId = UUID
 
-data CommandAction = Stay | ChargeFromGrid | DischargeToGrid deriving (Show, Eq, Generic)
+data CommandAction = CommandAction ChargeBattery FillReservoir FlushReservoir
+  deriving (Show, Eq, Generic)
+
+data ChargeBattery = NoChargeBattery | ChargeBattery
+  deriving (Show, Eq, Generic)
+data FillReservoir = NoFillReservoir | FillReservoir
+  deriving (Show, Eq, Generic)
+data FlushReservoir = NoFlushReservoir | FlushReservoir Double
+  deriving (Show, Eq, Generic)
 
 data LoginRequest = LoginRequest { loginRequestDeviceId :: Text }
 
@@ -34,24 +46,42 @@ instance FromJSON LoginRequest where
 instance ToJSON LoginRequest where
   toJSON (LoginRequest deviceId) = object [ "username" .= deviceId ]
 
-instance FromJSON CommandAction
-instance ToJSON CommandAction
+instance FromJSON CommandAction where
+  parseJSON = withObject "Command Action" $ \o ->
+    CommandAction <$> o .: "charge" <*> o .: "fill" <*> o .: "flush"
+
+instance ToJSON CommandAction where
+  toJSON (CommandAction charge fill flush) = object
+    [ "charge" .= charge
+    , "fill"   .= fill
+    , "flush"  .= flush ]
+
+instance ToJSON FillReservoir
+instance ToJSON FlushReservoir
+instance ToJSON ChargeBattery
+instance FromJSON FillReservoir
+instance FromJSON FlushReservoir
+instance FromJSON ChargeBattery
 
 instance ToJSON Measurement where
   toJSON Measurement{..} = object
-    [ "id" .= measurementDeviceId
-    , "time" .= measurementTime
-    , "charge" .= measurementCharge
-    , "max_charge" .= measurementMaxCharge
-    , "charge_rate" .= measurementChargeRate
-    , "temp" .= measurementTemp ]
+    [ "id"           .= measurementDeviceId
+    , "time"         .= measurementTime
+    , "charge_now"   .= measurementChargeNow
+    , "charge_full"  .= measurementChargeFull
+    , "charge_rate"  .= measurementChargeRate
+    , "ambient_temp" .= measurementAmbientTemp
+    , "water_temp"   .= measurementWaterTemp
+    , "water_level"  .= measurementWaterLevel ]
 
 instance FromJSON Measurement where
   parseJSON = withObject "Measurement" $ \o ->
-    Measurement <$>
-    (o .:? "id".!= nil) <*>
-    (o .: "time") <*>
-    (o .: "charge") <*>
-    (o .: "max_charge") <*>
-    (o .: "charge_rate") <*>
-    (o .: "temp")
+    Measurement           <$>
+    (o .:? "id".!= nil)   <*>
+    (o .: "time")         <*>
+    (o .: "charge_now")   <*>
+    (o .: "charge_full")  <*>
+    (o .: "charge_rate")  <*>
+    (o .: "ambient_temp") <*>
+    (o .: "water_temp")   <*>
+    (o .: "water_level")

@@ -44,23 +44,25 @@ fromNullable = unToMaybe def
 
 ---- Types for table: command ----
 
-data Command' c1 c2 c3 c4 =
+data Command' c1 c2 c3 c4 c5 c6 =
   Command
     { commandDeviceId :: c1
     , commandTime :: c2
-    , commandCommand :: c3
-    , commandStatus :: c4
+    , commandCharge :: c3
+    , commandFill :: c4
+    , commandFlush :: c5
+    , commandStatus :: c6
     }
 
-type Command = Command' UUID UTCTime Text (Maybe Bool)
+type Command = Command' UUID UTCTime Bool Bool (Maybe Double) (Maybe Bool)
 
-type CommandReadColumns = Command' (Column PGUuid) (Column PGTimestamptz) (Column PGText) (Column (Nullable PGBool))
+type CommandReadColumns = Command' (Column PGUuid) (Column PGTimestamptz) (Column PGBool) (Column PGBool) (Column (Nullable PGFloat8)) (Column (Nullable PGBool))
 
-type CommandWriteColumns = Command' (Column PGUuid) (Column PGTimestamptz) (Column PGText)  (Maybe (Column (Nullable PGBool)))
+type CommandWriteColumns = Command' (Column PGUuid) (Column PGTimestamptz) (Column PGBool) (Column PGBool) (Maybe (Column (Nullable PGFloat8))) (Maybe (Column (Nullable PGBool)))
 
-type CommandNullableColumns = Command' (Column (Nullable PGUuid))(Column (Nullable PGTimestamptz)) (Column (Nullable PGText)) (Column (Nullable PGBool))
+type CommandNullableColumns = Command' (Column (Nullable PGUuid))(Column (Nullable PGTimestamptz)) (Column (Nullable PGBool)) (Column (Nullable PGBool)) (Column (Nullable PGFloat8)) (Column (Nullable PGBool))
 
-type CommandNullable = Command' (Maybe UUID) (Maybe UTCTime) (Maybe Text) (Maybe Bool)
+type CommandNullable = Command' (Maybe UUID) (Maybe UTCTime) (Maybe Bool) (Maybe Bool) (Maybe Double) (Maybe Bool)
 
 fromNullableCommand :: CommandNullable -> Maybe Command
 fromNullableCommand = fromNullable
@@ -72,7 +74,9 @@ commandTable = Table "command" (pCommand
   Command
     { commandDeviceId = required "device_id"
     , commandTime = required "time"
-    , commandCommand = required "command"
+    , commandCharge = required "charge"
+    , commandFill = required "fill"
+    , commandFlush = optional "flush"
     , commandStatus = optional "status"
     }
   )
@@ -108,25 +112,27 @@ deviceTable = Table "device" (pDevice
 
 ---- Types for table: measurement ----
 
-data Measurement' c1 c2 c3 c4 c5 c6 =
+data Measurement' c1 c2 c3 c4 c5 c6 c7 c8 =
   Measurement
     { measurementDeviceId :: c1
     , measurementTime :: c2
-    , measurementCharge :: c3
-    , measurementMaxCharge :: c4
+    , measurementChargeNow :: c3
+    , measurementChargeFull :: c4
     , measurementChargeRate :: c5
-    , measurementTemp :: c6
+    , measurementAmbientTemp :: c6
+    , measurementWaterTemp :: c7
+    , measurementWaterLevel :: c8
     }
 
-type Measurement = Measurement' UUID UTCTime Int Int Double Double
+type Measurement = Measurement' UUID UTCTime Int Int Double Double Double Int
 
-type MeasurementReadColumns = Measurement' (Column PGUuid) (Column PGTimestamptz) (Column PGInt4) (Column PGInt4) (Column PGFloat8) (Column PGFloat8)
+type MeasurementReadColumns = Measurement' (Column PGUuid) (Column PGTimestamptz) (Column PGInt4) (Column PGInt4) (Column PGFloat8) (Column PGFloat8) (Column PGFloat8) (Column PGInt4)
 
-type MeasurementWriteColumns = Measurement' (Column PGUuid) (Column PGTimestamptz) (Column PGInt4) (Column PGInt4) (Column PGFloat8) (Column PGFloat8)
+type MeasurementWriteColumns = Measurement' (Column PGUuid) (Column PGTimestamptz) (Column PGInt4) (Column PGInt4) (Column PGFloat8) (Column PGFloat8) (Column PGFloat8) (Column PGInt4)
 
-type MeasurementNullableColumns = Measurement' (Column (Nullable PGUuid)) (Column (Nullable PGTimestamptz)) (Column (Nullable PGInt4)) (Column (Nullable PGInt4)) (Column (Nullable PGFloat8)) (Column (Nullable PGFloat8))
+type MeasurementNullableColumns = Measurement' (Column (Nullable PGUuid)) (Column (Nullable PGTimestamptz)) (Column (Nullable PGInt4)) (Column (Nullable PGInt4)) (Column (Nullable PGFloat8)) (Column (Nullable PGFloat8)) (Column (Nullable PGFloat8)) (Column (Nullable PGInt4))
 
-type MeasurementNullable = Measurement' (Maybe UUID) (Maybe UTCTime) (Maybe Int) (Maybe Int) (Maybe Double) (Maybe Double)
+type MeasurementNullable = Measurement' (Maybe UUID) (Maybe UTCTime) (Maybe Int) (Maybe Int) (Maybe Double) (Maybe Double) (Maybe Double) (Maybe Int)
 
 fromNullableMeasurement :: MeasurementNullable -> Maybe Measurement
 fromNullableMeasurement = fromNullable
@@ -138,10 +144,12 @@ measurementTable = Table "measurement" (pMeasurement
   Measurement
     { measurementDeviceId = required "device_id"
     , measurementTime = required "time"
-    , measurementCharge = required "charge"
-    , measurementMaxCharge = required "max_charge"
+    , measurementChargeNow = required "charge_now"
+    , measurementChargeFull = required "charge_full"
     , measurementChargeRate = required "charge_rate"
-    , measurementTemp = required "temp"
+    , measurementAmbientTemp = required "ambient_temp"
+    , measurementWaterTemp = required "water_temp"
+    , measurementWaterLevel = required "water_level"
     }
   )
 
@@ -152,10 +160,12 @@ pgMeasurement :: Measurement -> MeasurementWriteColumns
 pgMeasurement = pMeasurement Measurement
     { measurementDeviceId     = pgUUID
     , measurementTime         = pgUTCTime
-    , measurementCharge       = pgInt4
-    , measurementMaxCharge    = pgInt4
+    , measurementChargeNow    = pgInt4
+    , measurementChargeFull   = pgInt4
     , measurementChargeRate   = pgDouble
-    , measurementTemp         = pgDouble
+    , measurementAmbientTemp  = pgDouble
+    , measurementWaterTemp    = pgDouble
+    , measurementWaterLevel   = pgInt4
     }
 
 instance Default Constant Measurement MeasurementWriteColumns where
