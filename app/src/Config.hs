@@ -5,9 +5,11 @@
 
 module Config
   ( Config(..)
+  , ResourcePoolConfig(..)
   , ConnectInfo(..)
   , HostName
   , AccessLogLevel(..)
+  , def
   ) where
 
 import Data.Aeson
@@ -30,10 +32,18 @@ data Config = Config { configPort                     :: Port
                      , configHostname                 :: HostName
                      , configAccessLogLevel           :: AccessLogLevel
                      , configDatabaseConnectionString :: Text
+                     , configDatabaseConnectionPool   :: ResourcePoolConfig
                      }
   deriving(Read, Show, Generic)
 
+data ResourcePoolConfig = ResourcePoolConfig
+                          { configNumStripes :: Int
+                          , configNumResources :: Int
+                          }
+  deriving(Read, Show, Generic)
+
 instance FromJSON Config where parseJSON = genericParseJSON prefixOptions
+instance FromJSON ResourcePoolConfig where parseJSON = genericParseJSON prefixOptions
 
 -- | Default instance for testing convenience
 instance Default Config where
@@ -41,4 +51,10 @@ instance Default Config where
                , configHostname                 = "localhost"
                , configAccessLogLevel           = Enabled
                , configDatabaseConnectionString = "postgresql:///load_test"
+               , configDatabaseConnectionPool   = def
                }
+
+instance Default ResourcePoolConfig where
+  def = ResourcePoolConfig { configNumStripes   = 4
+                           , configNumResources = 4
+                           }

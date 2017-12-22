@@ -54,6 +54,7 @@ options = info (helper <*> configParser) description
                                       ]
                                 )
           )
+      <*> pure def
 
     description = fold
       [ fullDesc

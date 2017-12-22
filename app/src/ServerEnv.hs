@@ -152,10 +152,11 @@ runApp env = mapExceptT runLog
 
 -- | Get a pool of connections to the database.
 getDatabaseConnection :: MonadIO m => Config -> m (Pool Connection)
-getDatabaseConnection Config{..} = liftIO $ createPool
-    (connectPostgreSQL (encodeUtf8 configDatabaseConnectionString))
-    close
-    4 10 4
+getDatabaseConnection Config{..} = liftIO $
+  createPool open close configNumStripes 10 configNumResources
+  where
+    open = connectPostgreSQL (encodeUtf8 configDatabaseConnectionString)
+    ResourcePoolConfig{..} = configDatabaseConnectionPool
 
 -- | Get the hostname and port for this server separated by a colon
 --
