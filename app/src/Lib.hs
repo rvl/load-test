@@ -17,7 +17,7 @@ import Control.Natural
 import Data.Bifunctor                       (second)
 import Data.Foldable                        (toList)
 import Data.List                            (sortOn)
-import Data.Maybe                           (catMaybes)
+import Data.Maybe                           (catMaybes, fromMaybe)
 import Data.Monoid                          ((<>))
 import Data.Text                            (Text)
 import qualified Data.Text as T
@@ -119,12 +119,18 @@ server env = enter (appToHandler env) api
       withConnection $ \c -> insertDevice c deviceId
       return $ LoginRequest (UUID.toText deviceId)
 
-    statistics :: App Statistics
-    statistics = Statistics <$> countMeasurements
-
-countMeasurements :: App Int
-countMeasurements = longInt . head <$> runQueryWithConnection countMeasurementsQuery
-  where longInt = fromIntegral :: Int64 -> Int
+statistics :: App Statistics
+statistics = Statistics <$>
+             oneInt countMeasurementsQuery <*>
+             oneInt countDevicesQuery <*>
+             (headOr 0 <$> runQueryWithConnection (measurementChargeNow <$> totalsQuery)) <*>
+             (headOr 0 <$> runQueryWithConnection (measurementWaterLevel <$> totalsQuery)) <*>
+             runQueryWithConnection (deviceAveragesQuery measurementWaterTemp) <*>
+             pure 0 -- total water energy, cbb
+  where
+    oneInt = fmap (longInt . head) . runQueryWithConnection
+      where longInt = fromIntegral :: Int64 -> Int
+    headOr v = fromMaybe v . headMay
 
 {-# NOINLINE measurementsCounter #-}
 measurementsCounter :: P.Metric P.Counter

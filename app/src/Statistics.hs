@@ -11,7 +11,13 @@ import Data.Text (Text)
 import Data.Time.Clock (UTCTime)
 import GHC.Generics
 
-data Statistics = Statistics { statsMeasurementCount :: Int }
+data Statistics = Statistics { statsMeasurementCount :: Int -- ^ number of measurements taken
+                             , statsNumDevices :: Int -- ^ number of devices
+                             , statsTotalBatteryCharge :: Int -- ^ charge of all devices together
+                             , statsTotalWaterVolume :: Int -- ^ sum of all devices water level
+                             , statsMeanTemperature :: [(Int, (Double, Double))] -- ^ by current hour, temp and std dev
+                             , statsTotalWaterEnergy :: Double -- ^ potential energy of water in joules
+                             }
   deriving (Show, Generic)
 
 instance FromJSON Statistics
