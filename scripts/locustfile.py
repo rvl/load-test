@@ -1,7 +1,7 @@
 from locust import HttpLocust, TaskSet, task
 import random
 from datetime import datetime
-import json
+import locust_metrics
 
 json_headers = {"Content-type": "application/json" }
 
