@@ -32,25 +32,25 @@ in
       {
         job_name = "prometheus";
         static_configs = [
-          {
-            targets = [ "localhost:${toString prometheusPort}" ];
-          }
+          { targets = [ "localhost:${toString prometheusPort}" ]; }
         ];
       }
       {
-        job_name = "node";
+        job_name = "appnode";
         static_configs = [
-          {
-            targets = [ "localhost:9100" ];
-          }
+          { targets = [ "app:9100" ]; }
         ];
       }
       {
         job_name = "app";
         static_configs = [
-          {
-            targets = [ "localhost:${toString appPort}" ];
-          }
+          { targets = [ "app:${toString appPort}" ]; }
+        ];
+      }
+      {
+        job_name = "locust";
+        static_configs = [
+          { targets = [ "locust:8089" ]; }
         ];
       }
     ];

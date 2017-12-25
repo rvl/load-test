@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 let
-  locustFile = ./scripts/locustfile.py;
+  scripts = ./scripts;
   locustPort = 8089;
 
 in {
@@ -18,7 +18,7 @@ in {
     description = "Load tester";
     wantedBy = [ "multi-user.target" ];
     script = ''
-      ${pkgs.python3Packages.locustio}/bin/locust -f ${locustFile} --host="http://app:8080" --port=${toString locustPort}
+      ${pkgs.python3Packages.locustio}/bin/locust -f ${scripts}/locustfile.py --host="http://app:8080" --port=${toString locustPort}
     '';
 
     serviceConfig = {
