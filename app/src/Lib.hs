@@ -107,10 +107,10 @@ server env = enter (appToHandler env) api
 
     measurement :: DeviceId -> Measurement -> App NoContent
     measurement deviceId m@Measurement{..} = do
-      liftIO $ P.incCounter measurementsCounter
       withConnection $ \c -> do
         insertDevice c deviceId
         insertMeasurement c m { measurementDeviceId = deviceId }
+      liftIO $ P.incCounter measurementsCounter
       return NoContent
 
     login :: LoginRequest -> App LoginRequest
