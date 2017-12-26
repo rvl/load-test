@@ -4,6 +4,7 @@ let
   prometheusPort = 9090;
   grafanaPort = 3000;
   appPort = 8080;
+  cadvisorPort = 9980;
 in
 {
 
@@ -36,7 +37,7 @@ in
         ];
       }
       {
-        job_name = "appnode";
+        job_name = "node";
         static_configs = [
           { targets = [ "app:9100" ]; }
         ];
@@ -53,7 +54,19 @@ in
           { targets = [ "locust:8089" ]; }
         ];
       }
+      {
+        job_name = "cadvisor";
+        static_configs = [
+          { targets = [ "localhost:${toString cadvisorPort}" ]; }
+        ];
+      }
     ];
+  };
+
+  services.cadvisor = {
+    enable = true;
+    listenAddress = "0.0.0.0";
+    port = cadvisorPort;
   };
 
   services.grafana = {
